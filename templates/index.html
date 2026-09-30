@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}期間一覧 - 夜勤待機シフト管理{% endblock %}
+{% block content %}
+  <h1>期間一覧</h1>
+
+  <section class="card">
+    <h2>新しい期間を作成</h2>
+    <form method="post" action="{{ url_for('create_period') }}" class="inline-form">
+      <label>開始日（木曜日）:
+        <input type="date" name="start_date" value="{{ suggested }}" required>
+      </label>
+      <button type="submit">作成する</button>
+    </form>
+    <p class="hint">※開始日は必ず木曜日にしてください（4週間後の水曜日までが1期間です）。</p>
+  </section>
+
+  <section class="card">
+    <h2>これまでの期間</h2>
+    {% if periods %}
+      <table class="grid-table">
+        <thead>
+          <tr><th>期間</th><th>状態</th><th></th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for p in periods %}
+            <tr>
+              <td>{{ p.start_date }} 〜 {{ p.end_date }}</td>
+              <td>{{ "確定" if p.status == "final" else "作成中" }}</td>
+              <td><a href="{{ url_for('view_period', period_id=p.period_id) }}">開く</a></td>
+              <td>
+                <form method="post" action="{{ url_for('delete_period', period_id=p.period_id) }}"
+                      onsubmit="return confirm('{{ p.start_date }}〜{{ p.end_date }}の期間を削除します。シフト表や休み希望のデータもすべて消え、元に戻せません。よろしいですか？');">
+                  <button type="submit">削除</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>まだ期間が作成されていません。</p>
+    {% endif %}
+  </section>
+{% endblock %}

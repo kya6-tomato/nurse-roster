@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}{{ period.start_date }}〜{{ period.end_date }} - 夜勤待機シフト管理{% endblock %}
+{% block content %}
+  <h1>{{ period.start_date }} 〜 {{ period.end_date }}</h1>
+
+  <div class="toolbar">
+    <form method="post" action="{{ url_for('generate_period', period_id=period.period_id) }}"
+          onsubmit="return confirm('固定（ロック）していない日は自動生成で上書きされます。実行しますか？');">
+      <button type="submit" class="primary">自動生成する</button>
+    </form>
+    <a class="button" href="{{ url_for('export_period_route', period_id=period.period_id) }}">エクセルへ出力（印刷用）</a>
+    <form method="post" action="{{ url_for('delete_period', period_id=period.period_id) }}"
+          onsubmit="return confirm('この期間（{{ period.start_date }}〜{{ period.end_date }}）を削除します。シフト表や休み希望のデータもすべて消え、元に戻せません。よろしいですか？');">
+      <button type="submit" class="danger">この期間を削除する</button>
+    </form>
+  </div>
+
+  <section class="card">
+    <h2>シフト表</h2>
+    <p class="hint">マスの中の「編集」を押すと、担当者を選び直せます。「固定」にチェックすると、自動生成で上書きされなくなります。</p>
+    <div class="schedule-scroll">
+      <table class="schedule-table">
+        <thead>
+          <tr>
+            {% for a in weeks[0] %}
+              <th>{{ weekday_jp(parse_date(a.date)) }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for week in weeks %}
+            <tr>
+              {% for a in week %}
+                {% set d = parse_date(a.date) %}
+                <td class="day-cell {{ 'holiday-cell' if is_holiday_or_weekend(d) else '' }} {{ 'warn-cell' if a.date in violation_dates else '' }}">
+                  <div class="day-date">{{ d.month }}/{{ d.day }}</div>
+                  <div class="day-names">
+                    <div class="team-a-name">{{ nurses[a.nurse_a].name if a.nurse_a in nurses else '未設定' }}</div>
+                    <div class="team-b-name">{{ nurses[a.nurse_b].name if a.nurse_b in nurses else '未設定' }}</div>
+                  </div>
+                  {% if a.locked %}<div class="lock-badge">固定中</div>{% endif %}
+                  {% if a.date in violation_dates %}<div class="warn-badge">⚠</div>{% endif %}
+
+                  <details class="edit-details">
+                    <summary>編集</summary>
+                    <form method="post" action="{{ url_for('update_day', period_id=period.period_id, date=a.date) }}">
+                      <label>担当1
+                        <select name="nurse_a">
+                          <option value="">未設定</option>
+                          {% for n in all_active %}
+                            <option value="{{ n.id }}" {{ 'selected' if n.id == a.nurse_a else '' }}>{{ n.name }}</option>
+                          {% endfor %}
+                          {% if a.nurse_a and a.nurse_a not in active_ids %}
+                            {% set na = nurses.get(a.nurse_a) %}
+                            <option value="{{ a.nurse_a }}" selected>{{ na.name if na else a.nurse_a }}（無効）</option>
+                          {% endif %}
+                        </select>
+                      </label>
+                      <label>担当2
+                        <select name="nurse_b">
+                          <option value="">未設定</option>
+                          {% for n in all_active %}
+                            <option value="{{ n.id }}" {{ 'selected' if n.id == a.nurse_b else '' }}>{{ n.name }}</option>
+                          {% endfor %}
+                          {% if a.nurse_b and a.nurse_b not in active_ids %}
+                            {% set nb = nurses.get(a.nurse_b) %}
+                            <option value="{{ a.nurse_b }}" selected>{{ nb.name if nb else a.nurse_b }}（無効）</option>
+                          {% endif %}
+                        </select>
+                      </label>
+                      <p class="hint">※登録済みの組み合わせ以外を選ぶと、下の「条件チェック結果」に警告が出ます。</p>
+                      <label class="lock-label">
+                        <input type="checkbox" name="locked" {{ 'checked' if a.locked else '' }}>
+                        固定する
+                      </label>
+                      <button type="submit">保存</button>
+                    </form>
+                  </details>
+                </td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>条件チェック結果</h2>
+    {% if violations %}
+      <ul class="violation-list">
+        {% for v in violations %}
+          <li class="violation-{{ v.severity }}">{{ v.message }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="ok-message">今のところ、すべての条件を満たしています。</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>休み希望</h2>
+    <p class="hint">
+      休みたい日を選んで、下の「この内容で保存する」を押してください。「希望」はどうしても組めない時に動かすことがありますが、
+      「固定」に設定した日は自動生成で絶対に動かしません（条件を緩めても崩しません）。
+    </p>
+
+    <form method="post" action="{{ url_for('save_requests_grid', period_id=period.period_id) }}">
+      <div class="schedule-scroll">
+        <table class="grid-table requests-grid">
+          <thead>
+            <tr>
+              <th>看護師</th>
+              {% for a in period.assignments %}
+                {% set d = parse_date(a.date) %}
+                <th class="{{ 'holiday-cell' if is_holiday_or_weekend(d) else '' }}">{{ d.month }}/{{ d.day }}<br>{{ weekday_jp(d) }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for n in all_active %}
+              <tr>
+                <td>{{ n.name }}</td>
+                {% for a in period.assignments %}
+                  {% set state = request_state.get((n.id, a.date), '') %}
+                  <td class="{{ 'holiday-cell' if is_holiday_or_weekend(parse_date(a.date)) else '' }} {{ 'locked-cell' if state == 'hard' else '' }}">
+                    <select name="req_{{ n.id }}_{{ a.date }}">
+                      <option value="" {{ 'selected' if state == '' else '' }}>-</option>
+                      <option value="soft" {{ 'selected' if state == 'soft' else '' }}>希望</option>
+                      <option value="hard" {{ 'selected' if state == 'hard' else '' }}>固定</option>
+                    </select>
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <button type="submit" class="primary">この内容で保存する</button>
+    </form>
+  </section>
+{% endblock %}

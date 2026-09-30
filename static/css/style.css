@@ -1,0 +1,119 @@
+* { box-sizing: border-box; }
+body {
+  font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+  margin: 0;
+  background: #f4f6f8;
+  color: #222;
+}
+.topbar {
+  background: #1f4e79;
+  color: white;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.topbar .brand { color: white; font-weight: bold; text-decoration: none; font-size: 1.1rem; }
+.topbar nav a { color: white; margin-right: 16px; text-decoration: none; }
+.topbar nav a:hover { text-decoration: underline; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+.card {
+  background: white;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.hint { color: #666; font-size: 0.9rem; }
+
+.inline-form { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+
+button, .button {
+  background: #1f4e79;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 0.95rem;
+}
+button:hover, .button:hover { background: #163a5c; }
+button.primary { background: #2e7d32; }
+button.primary:hover { background: #1b5e20; }
+button.danger { background: #b3261e; }
+button.danger:hover { background: #8c1d17; }
+
+.toolbar { display: flex; gap: 12px; margin-bottom: 16px; }
+
+.grid-table { width: 100%; border-collapse: collapse; }
+.grid-table th, .grid-table td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; }
+.grid-table th { background: #eef2f6; }
+.inactive-row { opacity: 0.5; }
+
+.flashes { list-style: none; padding: 0; margin: 0 0 16px; }
+.flash { padding: 10px 14px; border-radius: 4px; margin-bottom: 8px; }
+.flash-ok { background: #e6f4ea; color: #1b5e20; }
+.flash-warn { background: #fff4e0; color: #8a5a00; }
+.flash-error { background: #fdecea; color: #b3261e; }
+
+.schedule-scroll { overflow-x: auto; }
+.schedule-table { border-collapse: collapse; width: 100%; min-width: 900px; }
+.schedule-table th { background: #eef2f6; padding: 6px; border: 1px solid #ddd; }
+.day-cell {
+  border: 1px solid #ddd;
+  vertical-align: top;
+  padding: 6px;
+  width: 14%;
+  min-width: 120px;
+}
+.holiday-cell { background: #fff7f5; }
+.warn-cell { background: #fff0e0; }
+.day-date { font-weight: bold; }
+.day-names { font-size: 0.9rem; margin: 4px 0; }
+.team-a-name { color: #1f4e79; }
+.team-b-name { color: #2e7d32; }
+.lock-badge { font-size: 0.75rem; color: #8a5a00; }
+.warn-badge { color: #b3261e; font-weight: bold; }
+
+.edit-details { margin-top: 4px; }
+.edit-details summary { cursor: pointer; color: #1f4e79; font-size: 0.85rem; }
+.edit-details form { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.edit-details select { width: 100%; }
+.lock-label { font-size: 0.85rem; }
+
+.requests-grid { min-width: 100%; }
+.requests-grid th, .requests-grid td { text-align: center; padding: 4px 6px; font-size: 0.85rem; white-space: nowrap; }
+.requests-grid th:first-child, .requests-grid td:first-child {
+  text-align: left; white-space: nowrap; position: sticky; left: 0; background: white; z-index: 1;
+}
+.requests-grid thead th:first-child { background: #eef2f6; z-index: 2; }
+.requests-grid select { width: 56px; font-size: 0.8rem; padding: 1px; }
+.requests-grid td.locked-cell { background: #fdecea; }
+
+.pairs-grid th, .pairs-grid td { text-align: center; padding: 4px 6px; font-size: 0.85rem; white-space: nowrap; }
+.pairs-grid th:first-child, .pairs-grid td:first-child {
+  text-align: left; position: sticky; left: 0; background: white; z-index: 1;
+}
+.pairs-grid thead th:first-child { background: #eef2f6; z-index: 2; }
+.pairs-grid input[type="checkbox"] { width: 18px; height: 18px; }
+
+.nurse-list-table { min-width: 760px; }
+.move-cell { white-space: nowrap; }
+.move-cell form { display: inline-block; margin-right: 4px; }
+.move-cell button { padding: 4px 8px; }
+.move-cell button:disabled { opacity: 0.3; cursor: default; }
+
+.nurse-edit-form { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.nurse-edit-form input[type="text"] { width: 130px; padding: 4px 6px; }
+.nurse-edit-form input[type="number"] { width: 84px; padding: 4px 6px; }
+
+.violation-list { list-style: none; padding: 0; }
+.violation-list li { padding: 6px 10px; margin-bottom: 4px; border-radius: 4px; }
+.violation-hard { background: #fdecea; color: #b3261e; }
+.violation-soft { background: #fff4e0; color: #8a5a00; }
+.ok-message { color: #1b5e20; }

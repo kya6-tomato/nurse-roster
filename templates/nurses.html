@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}看護師管理 - 夜勤待機シフト管理{% endblock %}
+{% block content %}
+  <h1>看護師管理</h1>
+
+  <section class="card">
+    <h2>看護師を追加</h2>
+    <form method="post" action="{{ url_for('add_nurse') }}" class="inline-form">
+      <label>氏名: <input type="text" name="name" required></label>
+      <label>役職: <input type="text" name="role" placeholder="任意"></label>
+      <button type="submit">追加する</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>一覧</h2>
+    <p class="hint">↑↓で表示順を並べ替えられます。氏名・役職・上限を書き換えて「更新」を押すと保存されます。</p>
+    <div class="schedule-scroll">
+      <table class="grid-table nurse-list-table">
+        <thead>
+          <tr>
+            <th>並び順</th><th>氏名</th><th>役職</th><th>勤務回数の上限</th><th></th>
+            <th>状態</th><th></th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for n in nurses %}
+            <tr class="{{ '' if n.active else 'inactive-row' }}">
+              <td class="move-cell">
+                <form method="post" action="{{ url_for('move_nurse', nurse_id=n.id) }}">
+                  <input type="hidden" name="direction" value="up">
+                  <button type="submit" {{ 'disabled' if loop.first else '' }} title="上へ">↑</button>
+                </form>
+                <form method="post" action="{{ url_for('move_nurse', nurse_id=n.id) }}">
+                  <input type="hidden" name="direction" value="down">
+                  <button type="submit" {{ 'disabled' if loop.last else '' }} title="下へ">↓</button>
+                </form>
+              </td>
+              <td colspan="4">
+                <form method="post" action="{{ url_for('update_nurse', nurse_id=n.id) }}" class="nurse-edit-form">
+                  <input type="text" name="name" value="{{ n.name }}" required placeholder="氏名">
+                  <input type="text" name="role" value="{{ n.role }}" placeholder="役職（任意）">
+                  <input type="number" name="max_load" min="0" step="1" placeholder="上限なし"
+                         value="{{ n.max_load if n.max_load is not none else '' }}">
+                  <button type="submit">更新</button>
+                </form>
+              </td>
+              <td>{{ "有効" if n.active else "無効" }}</td>
+              <td>
+                <form method="post" action="{{ url_for('toggle_nurse', nurse_id=n.id) }}">
+                  <button type="submit">{{ "無効にする" if n.active else "有効にする" }}</button>
+                </form>
+              </td>
+              <td>
+                <form method="post" action="{{ url_for('delete_nurse', nurse_id=n.id) }}"
+                      onsubmit="return confirm('{{ n.name }}さんを削除します。今後どの期間・組み合わせ設定からも参照できなくなり、元に戻せません。よろしいですか？');">
+                  <button type="submit" class="danger">削除</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">
+      ※無効にした看護師は、次回以降の自動生成の対象から外れます（過去のシフトの記録は残ります）。「削除」は記録ごと完全に消え、
+      過去の期間でもこの人の名前が表示できなくなります。基本的には「無効にする」を使い、削除は登録ミスなどの時だけお使いください。<br>
+      ※勤務回数の上限：通常は全員「勤務回数の差が1個以内」になるよう自動生成しますが、ここで上限を設定した人だけは
+      その人数までなら差を気にせず割り当てます（それ以外の人たちの間では、今まで通り差1個以内を守ります）。
+      空欄に戻して「更新」を押すと、上限を解除できます。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>組み合わせ設定</h2>
+    <p class="hint">
+      自動生成は、ここでチェックした「勤務させてよい2人組」しか使いません。チェックしていない組み合わせは
+      絶対に使われないので、実際にシフトを組むには、ある程度の組み合わせを登録しておく必要があります。
+    </p>
+    {% if active_nurses|length < 2 %}
+      <p>有効な看護師が2人以上いないと設定できません。</p>
+    {% else %}
+      <form method="post" action="{{ url_for('save_pairs') }}">
+        <div class="schedule-scroll">
+          <table class="grid-table pairs-grid">
+            <thead>
+              <tr>
+                <th></th>
+                {% for n in active_nurses %}<th>{{ n.name }}</th>{% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for n1 in active_nurses %}
+                {% set i = loop.index0 %}
+                <tr>
+                  <th>{{ n1.name }}</th>
+                  {% for n2 in active_nurses %}
+                    <td>
+                      {% if loop.index0 > i %}
+                        <input type="checkbox" name="pair_{{ n1.id }}_{{ n2.id }}"
+                          {{ 'checked' if (n1.id, n2.id) in pair_set or (n2.id, n1.id) in pair_set else '' }}>
+                      {% endif %}
+                    </td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <button type="submit" class="primary">この内容で保存する</button>
+      </form>
+    {% endif %}
+  </section>
+{% endblock %}
